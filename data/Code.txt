@@ -1,0 +1,21 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import find_peaks
+
+fname = 'Enter file name.txt'
+slices_SB_2 = np.loadtxt(fname)
+
+def find_peaks_SB(sig, h_min):
+    sig_et_0 = np.concatenate((np.zeros(1), sig, np.zeros(1)))
+    pics = find_peaks(sig_et_0, height=h_min, width=10)[0] - 1
+    return pics
+
+def peak_map(slices_SB, h_min):    
+    plt.figure()
+    for i in range(len(slices_SB)):
+        pics = find_peaks_SB(slices_SB[i], h_min)
+        for j in range(len(pics)):
+            plt.plot(pics[j], i, '.k')
+
+h_min = 0.6
+peak_map(slices_SB_2, h_min)
