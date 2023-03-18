@@ -22,6 +22,7 @@
           })
           pyright
           python310Packages.jupyter
+          black
         ];
       };
     };
