@@ -11,12 +11,17 @@
     {
       packages.${system}.default = pkgs.poetry2nix.mkPoetryApplication {
         projectDir = self;
+        preferWheels = true;
       };
 
       devShells.${system}.default = pkgs.mkShellNoCC {
         packages = with pkgs; [
-          (poetry2nix.mkPoetryEnv { projectDir = self; })
+          (poetry2nix.mkPoetryEnv {
+            projectDir = self;
+            preferWheels = true;
+          })
           pyright
+          python310Packages.jupyter
         ];
       };
     };
