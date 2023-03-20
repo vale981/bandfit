@@ -6,6 +6,7 @@ from scipy import signal
 from skimage.transform import resize
 from skimage.filters import hessian
 from skimage.morphology import skeletonize
+from itertools import chain
 
 
 def load_data(data_file: str) -> np.ndarray:
@@ -92,6 +93,9 @@ def optimize():
     d = load_data("../data/t_t_0.5_c_2.0_d_0.0_pc_1.0_pd_1.0.txt")
     d = load_data("../data/t_t_1.0_c_0.75_d_0.2_pc_1.0_pd_1.0.txt")
 
+    plt.plot()
+    return
+
     def target(x):
         a, c, dd = x
         test = smear_band(
@@ -151,3 +155,84 @@ def get_weight(data, radius, k, e, weight, depth):
         weight += get_weight(data, radius, k + 1, next_e, weight, depth - 1)
 
     return weight
+
+
+def lorentzian(x, x0, γ):
+    return γ**2 / ((x - x0) ** 2 + γ**2)
+
+
+def double_lorentzian(x, x0_1, x0_2, γ, r=1):
+    return lorentzian(x, x0_1, γ) + r * lorentzian(x, x0_2, γ)
+
+
+def refine_band_fit(k, e0, data):
+    pass
+
+
+def detect_bands_fixed_k(k, data, γ, last_separation=0, min_height=0.5):
+    col = data[:, k].copy()
+    col -= col.min()
+    col /= col.max()
+
+    e_axis = np.arange(col.size)
+
+    guesses = np.array(sc.signal.find_peaks(col, distance=2, height=min_height)[0])
+    means = guesses[:, None] + guesses[None, :]
+
+    guess_i_1, guess_i_2 = np.unravel_index(
+        np.argmin(abs(means - col.size)), means.shape
+    )
+
+    guess_1, guess_2 = np.sort((guesses[guess_i_1], guesses[guess_i_2]))
+
+    if last_separation > 0 and abs(guess_2 - guess_1) < last_separation / 4:
+        guess_2 = col.size - guess_1
+
+    col /= col[guess_1]
+
+    (e_1, e_2, γ, _), cov = sc.optimize.curve_fit(
+        double_lorentzian,
+        e_axis,
+        col,
+        (guess_1, guess_2, γ, 1),
+        bounds=(
+            (max(guess_1 - γ, 0), max(guess_2 - γ, 0), 0.5, 0.3),
+            (min(guess_1 + γ, col.size), min(guess_2 + γ, col.size), col.size, 1 / 0.3),
+        ),
+    )
+
+    e_1, e_2 = np.sort((e_1, e_2))
+    # es = np.linspace(0, col.size, 1000)
+    # plt.plot(col)
+    # plt.plot(es, double_lorentzian(es, e_1, e_2, γ, _))
+
+    σ_1, σ_2, _, _ = np.sqrt(np.diag(cov))
+
+    return e_1, e_2, σ_1, σ_2
+
+
+def detect_bands(data, γ=20, min_height=0.5):
+    bands = []
+
+    e_1, e_2 = 0, 0
+    for k in range(data.shape[1]):
+        e_1, e_2, *σ = detect_bands_fixed_k(
+            k, data, γ, last_separation=abs(e_2 - e_1), min_height=min_height
+        )
+
+        bands.append((e_1, e_2, *σ))
+
+    return np.array(bands)
+
+
+def plot_data_with_bands(data, bands):
+    plt.matshow(data)
+    ks = np.arange(data.shape[1])
+
+    plt.errorbar(ks, bands[:, 0], yerr=bands[:, 2])
+    plt.errorbar(ks, bands[:, 1], yerr=bands[:, 3])
+
+
+#    return sc.optimize.curve_fit(double_lorentzian, e_axis, col, (0, 10, 0, 3))
+
+def fit_to_bands(bands):
