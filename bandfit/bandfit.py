@@ -262,7 +262,7 @@ def fit_to_bands(bands, b=1, c=1, d=1):
         np.hstack([bands_normalized[:, 0], bands_normalized[:, 1]]),
         (b, c, d, 1, 0),
         sigma=np.hstack([bands_normalized[:, 2], bands_normalized[:, 3]]),
-        bounds=[(-10, -10, -10, 0.9, -0.5), (10, 10, 10, 1.1, 0.5)],
+        bounds=[(0, -10, -10, 0.9, -0.5), (10, 10, 10, 1.1, 0.5)],
     )
 
     plt.plot(ks, candidate(np.hstack([ks, ks]), *p)[: bands.shape[0]])
