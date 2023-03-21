@@ -121,13 +121,9 @@ def plot_data_with_bands(data, bands):
     plt.errorbar(ks, bands[:, 1], yerr=bands[:, 3])
 
 
-#    return sc.optimize.curve_fit(double_lorentzian, e_axis, col, (0, 10, 0, 3))
-
-
 def candidate(k, c, d, a, δb, k_scale, k_shift):
     k = np.asarray(k[: k.size // 2]) * k_scale + k_shift
     energies = energy(k, a, a + δb * a, c, d)
-    # energies /= energies.max()
 
     return np.hstack([energies, energies])
 
