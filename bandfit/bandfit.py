@@ -6,7 +6,7 @@ from scipy import signal
 from skimage.transform import resize
 from skimage.filters import hessian
 from skimage.morphology import skeletonize
-from itertools import chain
+import itertools
 from scipy.interpolate import splrep, BSpline
 
 
@@ -250,15 +250,15 @@ def plot_data_with_bands(data, bands):
 #    return sc.optimize.curve_fit(double_lorentzian, e_axis, col, (0, 10, 0, 3))
 
 
-def candidate(k, b, c, d, k_scale, k_shift):
+def candidate(k, a, c, d, δb, k_scale, k_shift):
     k = np.asarray(k[: k.size // 2]) * k_scale + k_shift
-    energies = energy(k, 1 - b - c - d, b, c, d)
-    energies /= energies.max()
+    energies = energy(k, a, a + δb * a, c, d)
+    # energies /= energies.max()
 
     return np.hstack([energies, energies])
 
 
-def fit_to_bands(bands, b=1, c=1, d=1):
+def fit_to_bands(bands, a=1, δb=0, c=10, d=10, ic_scan_steps=3):
     bands_normalized = bands.copy()
 
     bands_normalized[:, :2] -= np.sum(bands_normalized[:, :2], axis=1).mean() / 2
@@ -269,18 +269,44 @@ def fit_to_bands(bands, b=1, c=1, d=1):
 
     plt.plot(ks, bands_normalized[:, 0])
     plt.plot(ks, bands_normalized[:, 1])
-    p, cov = sc.optimize.curve_fit(
-        candidate,
-        np.hstack([ks, ks]),
-        np.hstack([bands_normalized[:, 0], bands_normalized[:, 1]]),
-        (b, c, d, 1, 0),
-        sigma=np.hstack([bands_normalized[:, 2], bands_normalized[:, 3]]),
-        bounds=[(0, -10, -10, 0.9, -0.5), (10, 10, 10, 1.1, 0.5)],
-    )
 
+    bounds = np.array([(0.1, 0, -10, -0.5, 0.9, -0.5), (10, 10, 10, 0.5, 1.1, 0.5)])
+    Δ_bounds = bounds[1, :3] - bounds[0, :3]
+
+    ics = np.tile(np.linspace(0, 1, ic_scan_steps), (3, 1))
+    ics *= Δ_bounds[:, None]
+    ics += bounds[0, :3][:, None]
+
+    min_δb = np.inf
+    for ic in itertools.product(*ics):
+        p, cov_, _, _, success = sc.optimize.curve_fit(
+            candidate,
+            np.hstack([ks, ks]),
+            np.hstack([bands_normalized[:, 0], bands_normalized[:, 1]]),
+            (*ic, 0, 1, 0),
+            sigma=np.hstack([bands_normalized[:, 2], bands_normalized[:, 3]]),
+            bounds=bounds,
+            full_output=True,
+        )
+
+        if success < 1 or success > 4:
+            continue
+
+        if (
+            abs(p[3]) < min_δb
+            and np.sqrt(np.sum(np.diag(cov_))) / np.linalg.norm(p) < 0.1
+        ):
+            print("hey", p, p[3], min_δb)
+
+            (a, c, d, δb, k_scale, k_shift) = p
+            min_δb = abs(δb)
+            cov = cov_
     plt.plot(ks, candidate(np.hstack([ks, ks]), *p)[: bands.shape[0]])
-    (b, c, d, k_scale, k_shift) = p
-    a = 1 - b - c - d
+
+    b = a + δb * a
+
+    σ = np.sqrt(np.diag(cov))
+    σ[1] = np.sqrt((σ[0] * (1 + δb)) ** 2 + (a * σ[1]) ** 2)
 
     scale = 1 / a
 
@@ -289,9 +315,29 @@ def fit_to_bands(bands, b=1, c=1, d=1):
     c *= scale
     d *= scale
 
-    σ = np.sqrt(np.diag(cov))
-    σ = np.array([np.sqrt(sum(σ[:3] ** 2)), *σ])
-
     σ[:4] *= scale
 
     return ((a, b, c, d, k_scale, k_shift), σ)
+
+
+def plot_data_with_bands_and_fit(data, bands, band_fit):
+    plt.matshow(data)
+    ks = np.arange(data.shape[1])
+
+    (a, b, c, d, k_scale, k_shift), σ, scales, shifts = band_fit
+
+    smooth_ks_unscaled = np.linspace(0, data.shape[1], 1000)
+    smooth_ks = smooth_ks_unscaled / smooth_ks_unscaled[-1]
+    smooth_ks -= 1 / 2
+    smooth_ks *= 2 * np.pi
+    smooth_ks *= k_scale
+    smooth_ks += k_shift
+
+    upper_band = -energy(smooth_ks, a, b, c, d)
+    print(bands[:, 0][data.shape[1] // 2])
+    upper_band += energy(k_shift, a, b, c, d) + shifts
+    upper_band *= scales[0]
+
+    plt.errorbar(ks, bands[:, 0], yerr=bands[:, 2])
+    plt.errorbar(ks, bands[:, 1], yerr=bands[:, 3])
+    plt.plot(smooth_ks_unscaled, upper_band)
