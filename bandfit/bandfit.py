@@ -235,4 +235,34 @@ def plot_data_with_bands(data, bands):
 
 #    return sc.optimize.curve_fit(double_lorentzian, e_axis, col, (0, 10, 0, 3))
 
-def fit_to_bands(bands):
+
+def candidate(k, a, b, c, d, s, k_scale):
+    k = np.asarray(k) * k_scale
+    energies = energy(k, a, b, c, d)
+    energies /= energies.max()
+    return energies * s
+
+
+def fit_to_bands(bands, a=1, b=1, c=1, d=1):
+    bands_normalized = bands.copy()
+
+    bands_normalized[:, :2] -= np.sum(bands_normalized[:, :2], axis=1).mean() / 2
+    bands_normalized[:, :2] /= np.max(np.abs(bands_normalized[:, :2]), axis=0)
+    bands_normalized[:, 0] *= -1
+
+    ks = np.linspace(-np.pi, np.pi, bands_normalized.shape[0])
+
+    plt.plot(ks, bands_normalized[:, 0])
+    plt.plot(ks, bands_normalized[:, 1])
+    p, _ = sc.optimize.curve_fit(
+        candidate,
+        ks,
+        bands_normalized[:, 0],
+        (a, b, c, d, 1, 1),
+        sigma=bands_normalized[:, 2],
+        bounds=[(0.5, 0.5, -5, -5, 0.5, 0.5), (1.5, 1.5, 5, 5, 1.5, 1.5)],
+    )
+
+    plt.plot(ks, candidate(ks, *p))
+
+    return p, _
