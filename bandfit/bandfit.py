@@ -130,7 +130,7 @@ def candidate(k, c, d, a, δb, k_scale, k_shift):
 
 def fit_to_bands(
     bands,
-    bounds=[(-10, -10, 0.1, -0.5, 0.9, -0.5), (10, 10, 10, 0.5, 1.1, 0.5)],
+    bounds=[(-10, -10, 0.1, -0.5, 0.8, -0.5), (10, 10, 10, 0.5, 1.2, 0.5)],
     ic_scan_steps=5,
     c_d_order=0,
     debug_plots=False,
@@ -229,3 +229,13 @@ def plot_data_with_bands_and_fit(data, bands, band_fit):
     plt.errorbar(ks, bands[:, 0], yerr=bands[:, 2])
     plt.errorbar(ks, bands[:, 1], yerr=bands[:, 3])
     plt.plot(smooth_ks_unscaled, upper_band)
+
+
+def plot_error_funnel(p, σ):
+    ks = np.linspace(-np.pi, np.pi, 1000)
+
+    params = np.random.multivariate_normal(p, np.diag(σ), 1000)
+    for param in params:
+        plt.plot(ks, energy(ks, *param), color="gray", alpha=0.1)
+
+    plt.plot(ks, energy(ks, *p), linewidth=2)
