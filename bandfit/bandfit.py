@@ -258,7 +258,7 @@ def candidate(k, c, d, a, δb, k_scale, k_shift):
     return np.hstack([energies, energies])
 
 
-def fit_to_bands(bands, a=1, δb=0, c=10, d=10, ic_scan_steps=5):
+def fit_to_bands(bands, a=1, δb=0, c=10, d=10, ic_scan_steps=5, c_d_order=0):
     bands_normalized = bands.copy()
 
     bands_normalized[:, :2] -= np.sum(bands_normalized[:, :2], axis=1).mean() / 2
@@ -279,6 +279,12 @@ def fit_to_bands(bands, a=1, δb=0, c=10, d=10, ic_scan_steps=5):
 
     min_δb = np.inf
     for ic in itertools.product(*ics):
+        if c_d_order == 1 and ic[0] > ic[1]:
+            continue
+
+        if c_d_order == -1 and ic[0] < ic[1]:
+            continue
+
         p, cov_, _, _, success = sc.optimize.curve_fit(
             candidate,
             np.hstack([ks, ks]),
