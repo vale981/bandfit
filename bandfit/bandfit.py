@@ -235,11 +235,19 @@ def plot_data_with_bands_and_fit(data, bands, band_fit):
     plt.plot(smooth_ks_unscaled, upper_band)
 
 
-def plot_error_funnel(p, σ):
-    ks = np.linspace(-np.pi, np.pi, 1000)
+def plot_error_funnel(p, σ, ks=None):
+    ks = ks or np.linspace(-np.pi, np.pi, 1000)
 
-    params = np.random.multivariate_normal(p, np.diag(σ), 1000)
+    params = np.random.multivariate_normal(p, np.diag(σ), 2000)
+    energies = []
     for param in params:
-        plt.plot(ks, energy(ks, *param), color="gray", alpha=0.1)
+        energies.append(energy(ks, *param))
+        # plt.plot(ks, energy(ks, *param), color="gray", alpha=0.1)
 
-    plt.plot(ks, energy(ks, *p), linewidth=2)
+    energies = np.array(energies)
+    σ_e = np.std(energies, axis=0)
+    mean = energy(ks, *p)
+    plt.plot(ks, mean, linewidth=2)
+    plt.fill_between(ks, mean - σ_e, mean + σ_e, alpha=0.2)
+
+    return mean, mean - σ_e, mean + σ_e
