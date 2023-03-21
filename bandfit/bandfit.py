@@ -250,7 +250,7 @@ def plot_data_with_bands(data, bands):
 #    return sc.optimize.curve_fit(double_lorentzian, e_axis, col, (0, 10, 0, 3))
 
 
-def candidate(k, a, c, d, δb, k_scale, k_shift):
+def candidate(k, c, d, a, δb, k_scale, k_shift):
     k = np.asarray(k[: k.size // 2]) * k_scale + k_shift
     energies = energy(k, a, a + δb * a, c, d)
     # energies /= energies.max()
@@ -258,7 +258,7 @@ def candidate(k, a, c, d, δb, k_scale, k_shift):
     return np.hstack([energies, energies])
 
 
-def fit_to_bands(bands, a=1, δb=0, c=10, d=10, ic_scan_steps=3):
+def fit_to_bands(bands, a=1, δb=0, c=10, d=10, ic_scan_steps=5):
     bands_normalized = bands.copy()
 
     bands_normalized[:, :2] -= np.sum(bands_normalized[:, :2], axis=1).mean() / 2
@@ -270,12 +270,12 @@ def fit_to_bands(bands, a=1, δb=0, c=10, d=10, ic_scan_steps=3):
     plt.plot(ks, bands_normalized[:, 0])
     plt.plot(ks, bands_normalized[:, 1])
 
-    bounds = np.array([(0.1, 0, -10, -0.5, 0.9, -0.5), (10, 10, 10, 0.5, 1.1, 0.5)])
-    Δ_bounds = bounds[1, :3] - bounds[0, :3]
+    bounds = np.array([(-10, -10, 0.1, -0.5, 0.9, -0.5), (10, 10, 10, 0.5, 1.1, 0.5)])
+    Δ_bounds = bounds[1, :2] - bounds[0, :2]
 
-    ics = np.tile(np.linspace(0, 1, ic_scan_steps), (3, 1))
+    ics = np.tile(np.linspace(0, 1, ic_scan_steps), (2, 1))
     ics *= Δ_bounds[:, None]
-    ics += bounds[0, :3][:, None]
+    ics += bounds[0, :2][:, None]
 
     min_δb = np.inf
     for ic in itertools.product(*ics):
@@ -283,7 +283,7 @@ def fit_to_bands(bands, a=1, δb=0, c=10, d=10, ic_scan_steps=3):
             candidate,
             np.hstack([ks, ks]),
             np.hstack([bands_normalized[:, 0], bands_normalized[:, 1]]),
-            (*ic, 0, 1, 0),
+            (*ic, 1, 0, 1, 0),
             sigma=np.hstack([bands_normalized[:, 2], bands_normalized[:, 3]]),
             bounds=bounds,
             full_output=True,
@@ -296,11 +296,13 @@ def fit_to_bands(bands, a=1, δb=0, c=10, d=10, ic_scan_steps=3):
             abs(p[3]) < min_δb
             and np.sqrt(np.sum(np.diag(cov_))) / np.linalg.norm(p) < 0.1
         ):
+            print(ic)
             print("hey", p, p[3], min_δb)
 
             (a, c, d, δb, k_scale, k_shift) = p
             min_δb = abs(δb)
             cov = cov_
+
     plt.plot(ks, candidate(np.hstack([ks, ks]), *p)[: bands.shape[0]])
 
     b = a + δb * a
