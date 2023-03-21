@@ -170,14 +170,16 @@ def refine_band_fit(k, e0, data):
     pass
 
 
-def detect_bands_fixed_k(k, data, γ, last_separation=0, min_height=0.5):
+def detect_bands_fixed_k(
+    k, data, γ, last_separation=0, min_height=0.5, separation_continuity=1 / 2
+):
     col = data[:, k].copy()
     col -= col.min()
     col /= col.max()
 
     e_axis = np.arange(col.size)
 
-    guesses = np.array(sc.signal.find_peaks(col, distance=2, height=min_height)[0])
+    guesses, props = sc.signal.find_peaks(col, distance=2, height=min_height)
     means = guesses[:, None] + guesses[None, :]
 
     guess_i_1, guess_i_2 = np.unravel_index(
@@ -186,8 +188,19 @@ def detect_bands_fixed_k(k, data, γ, last_separation=0, min_height=0.5):
 
     guess_1, guess_2 = np.sort((guesses[guess_i_1], guesses[guess_i_2]))
 
-    if last_separation > 0 and abs(guess_2 - guess_1) < last_separation / 4:
-        guess_2 = col.size - guess_1
+    if (
+        last_separation > 0
+        and abs((abs(guess_2 - guess_1) - last_separation)) / last_separation
+        > separation_continuity
+    ):
+        guess_idx = (guesses[:, None] == [guess_1, guess_2]).argmax(axis=0)
+        heights = props["peak_heights"][guess_idx]
+
+        if heights[0] > heights[1]:
+            guess_2 = col.size - guess_1
+
+        else:
+            guess_1 = col.size - guess_2
 
     col /= col[guess_1]
 
