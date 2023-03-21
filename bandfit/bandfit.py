@@ -287,6 +287,7 @@ def fit_to_bands(bands, b=1, c=1, d=1):
     a *= scale
     b *= scale
     c *= scale
+    d *= scale
 
     σ = np.sqrt(np.diag(cov))
     σ = np.array([np.sqrt(sum(σ[:3] ** 2)), *σ])
