@@ -117,8 +117,8 @@ def plot_data_with_bands(data, bands):
     plt.matshow(data)
     ks = np.arange(data.shape[1])
 
-    plt.errorbar(ks, bands[:, 0], yerr=bands[:, 2])
-    plt.errorbar(ks, bands[:, 1], yerr=bands[:, 3])
+    plt.errorbar(ks, bands[:, 0], yerr=bands[:, 2], color="white")
+    plt.errorbar(ks, bands[:, 1], yerr=bands[:, 3], color="white")
 
 
 def candidate(k, c, d, a, δb, k_scale, k_shift):
