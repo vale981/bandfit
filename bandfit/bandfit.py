@@ -328,9 +328,12 @@ def fit_to_bands(
     c *= scale
     d *= scale
 
-    σ[:4] *= scale
+    final_params = (a, b, c, d, k_scale, k_shift)
+    σ[:4] = np.sqrt(
+        (σ[:4] * scale) ** 2 + (np.array(final_params[:4])[:4] / a**2 * σ[0]) ** 2
+    )
 
-    return ((a, b, c, d, k_scale, k_shift), σ)
+    return (final_params, σ)
 
 
 def plot_data_with_bands_and_fit(data, bands, band_fit):
