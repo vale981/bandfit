@@ -336,28 +336,6 @@ def fit_to_bands(
     return (final_params, σ)
 
 
-def plot_data_with_bands_and_fit(data, bands, band_fit):
-    plt.matshow(data)
-    ks = np.arange(data.shape[1])
-
-    (a, b, c, d, k_scale, k_shift), σ, scales, shifts = band_fit
-
-    smooth_ks_unscaled = np.linspace(0, data.shape[1], 1000)
-    smooth_ks = smooth_ks_unscaled / smooth_ks_unscaled[-1]
-    smooth_ks -= 1 / 2
-    smooth_ks *= 2 * np.pi
-    smooth_ks *= k_scale
-    smooth_ks += k_shift
-
-    upper_band = -energy(smooth_ks, a, b, c, d)
-    upper_band += energy(k_shift, a, b, c, d) + shifts
-    upper_band *= scales[0]
-
-    plt.errorbar(ks, bands[:, 0], yerr=bands[:, 2])
-    plt.errorbar(ks, bands[:, 1], yerr=bands[:, 3])
-    plt.plot(smooth_ks_unscaled, upper_band)
-
-
 def plot_error_funnel(p, σ, ks=None):
     ks = ks or np.linspace(-np.pi, np.pi, 1000)
 
