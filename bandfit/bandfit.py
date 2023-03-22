@@ -205,7 +205,7 @@ def candidate(k, c, d, a, δb, k_scale, k_shift):
     The ``a,c,d`` parameters correspond to the parameters of the
     hamiltonian and ``b = a * (1 + δb)`` so that the difference
     between ``a`` and ``b`` can be constrained.  Additionally, the
-    ``k`` argument is scaled and shifted with ``k_scale,k_shift``.
+    ``k`` argument is scaled and shifted with ``k_scale, k_shift``.
     """
     k = np.asarray(k[: k.size // 2]) * k_scale + k_shift
     energies = energy(k, a, a + δb * a, c, d)
