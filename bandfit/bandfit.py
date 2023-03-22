@@ -40,8 +40,12 @@ def lorentzian(x, x0, γ):
     return γ**2 / ((x - x0) ** 2 + γ**2)
 
 
-def double_lorentzian(x, x0_1, x0_2, γ, r=1):
-    return lorentzian(x, x0_1, γ) + r * lorentzian(x, x0_2, γ)
+def double_lorentzian(x, x0_1, x0_2, γ, a, b):
+    """
+    A sum of two lorentzians of equal width cerntered around
+    ``x0_1,x0_2`` with width ``γ`` peak heights ``a, b``
+    """
+    return a * lorentzian(x, x0_1, γ) + b * lorentzian(x, x0_2, γ)
 
 
 def detect_bands_fixed_k(
