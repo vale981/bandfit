@@ -220,6 +220,42 @@ def fit_to_bands(
     c_d_order=0,
     debug_plots=False,
 ):
+    """
+    Fits the bands obtained from :any:`detect_bands` to the
+    theoretical band structure to obtain the parameters ``a, b, c,
+    d``.
+
+    The fit is weighted by the uncertainties on the detected band
+    structure and preformed on the upper and lower band
+    simultaneously.  Multiple initial conditions (controlled by
+    ``ic_scan_steps``) are tested and the result is selected for
+    having non-outlying variance and yields values of ``a`` and ``b``
+    that are close to each other.
+
+    Because at ``a==b`` swapping ``c, d`` results in the same band
+    structure the parameter ``c_d_order`` controlls whether ``c < d``
+    or ``d > c`` is preferred when fitting.
+
+    :param bands: The output of :any:`detect_bands`.
+    :param bounds: A list of tuples specifying the lower and upper
+        bounds on the fit parameters (see the documentation of
+        ``scipy.optimize.curve_fit``).  Note that the fit parameters
+        are the parameters of :any:`candidate` which dictates their
+        order.
+    :param ic_scan_steps: The number of configurations per variable
+        that are scanned when fitting.  To find all possible
+        parametere configuration the initial points for fitting are
+        evenly distributed through the ``c, d`` space set by the
+        ``bounds``.
+    :param debug_plots: Plot the two bands and the fitted band for
+        debugging.
+
+    :returns: A tuple containing the parameters ``a, b, c, d, k_scale,
+              k_shift`` and a tuple containing the uncertainty of
+              these parameters (as estimated by the fit routine).  The
+              paramteters are normalized so that ``a==1``.
+    """
+
     bands_normalized = bands.copy()
 
     bands_normalized[:, :2] -= np.sum(bands_normalized[:, :2], axis=1).mean() / 2
