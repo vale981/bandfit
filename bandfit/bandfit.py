@@ -104,7 +104,10 @@ def detect_bands_fixed_k(
     e_axis = np.arange(col.size)
 
     guesses, props = sc.signal.find_peaks(
-        col, distance=max(2, last_separation * separation_continuity), height=min_height
+        col,
+        distance=max(2, last_separation * separation_continuity),
+        height=min_height,
+        **kwargs
     )
     means = guesses[:, None] + guesses[None, :]
 
