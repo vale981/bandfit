@@ -133,18 +133,24 @@ def detect_bands_fixed_k(
 
     col /= col[guess_1]
 
-    (e_1, e_2, γ, _), cov = sc.optimize.curve_fit(
+    (e_1, e_2, γ, *_), cov = sc.optimize.curve_fit(
         double_lorentzian,
         e_axis,
         col,
-        (guess_1, guess_2, γ, 1),
+        (guess_1, guess_2, γ, 1, 1),
         bounds=(
-            (max(guess_1 - γ, 0), max(guess_2 - γ, 0), 0.5, 0.3),
-            (min(guess_1 + γ, col.size), min(guess_2 + γ, col.size), col.size, 1 / 0.3),
+            (max(guess_1 - γ, 0), max(guess_2 - γ, 0), 0.5, 0.1, 0.1),
+            (
+                min(guess_1 + γ, col.size),
+                min(guess_2 + γ, col.size),
+                col.size,
+                2,
+                2,
+            ),
         ),
     )
 
-    σ_1, σ_2, _, _ = np.sqrt(np.diag(cov))
+    σ_1, σ_2, *_ = np.sqrt(np.diag(cov))
 
     (e_1, σ_1), (e_2, σ_2) = np.sort(((e_1, σ_1), (e_2, σ_2)), axis=0)
 
@@ -155,13 +161,17 @@ def detect_bands_fixed_k(
     return e_1, e_2, σ_1, σ_2
 
 
-def detect_bands(data, γ=20, min_height=0.5):
+def detect_bands(data, *args, **kwargs):
+    """ """
     bands = []
+
+    if "last_separation" in kwargs:
+        del kwargs["last_separation"]
 
     e_1, e_2 = 0, 0
     for k in range(data.shape[1]):
         e_1, e_2, *σ = detect_bands_fixed_k(
-            k, data, γ, last_separation=abs(e_2 - e_1), min_height=min_height
+            k, data, *args, **kwargs, last_separation=abs(e_2 - e_1)
         )
 
         bands.append((e_1, e_2, *σ))
