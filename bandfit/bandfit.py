@@ -226,7 +226,6 @@ def plot_data_with_bands_and_fit(data, bands, band_fit):
     smooth_ks += k_shift
 
     upper_band = -energy(smooth_ks, a, b, c, d)
-    print(bands[:, 0][data.shape[1] // 2])
     upper_band += energy(k_shift, a, b, c, d) + shifts
     upper_band *= scales[0]
 
