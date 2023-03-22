@@ -36,6 +36,7 @@ def energy(*args) -> np.ndarray:
 
 
 def lorentzian(x, x0, γ):
+    """A Lorentzian centered around ``x0`` with width ``γ``."""
     return γ**2 / ((x - x0) ** 2 + γ**2)
 
 
@@ -44,15 +45,63 @@ def double_lorentzian(x, x0_1, x0_2, γ, r=1):
 
 
 def detect_bands_fixed_k(
-    k, data, γ, last_separation=0, min_height=0.5, separation_continuity=1 / 2
+    k,
+    data,
+    γ=10,
+    last_separation=0,
+    separation_continuity=1 / 2,
+    min_height=0.5,
+    **kwargs
 ):
+    """
+    Detect the location of the peaks corresponding to the bands in a
+    vertical slice throught the measured bands structure (i.e. fixed
+    ``k``).
+
+    The coarse detection of the peaks is handled by
+    ``scipy.signal.find_peaks`` to which the ``**kwargs`` are passed
+    through.  Of those peaks, the ones being most symmetric around the
+    center of the slice are being selected.  Should the separation of
+    the peaks not fullfil the continuity condition (see
+    ``separation_continuity``), the peak with the highest amplitude is
+    being selected and mirrored across the center.  Subsequently a sum
+    of two Lorentzians with peaks within ``2 γ`` of those peaks is
+    fitted to the slice.  This fit also quantifies the uncertainty of
+    the peak positions.
+
+    :param k: The index of the column in the ``data`` where the bands
+              are to be detected.
+    :param data: An two dimensional array of shape ``(# energy slices,
+        # k states)`` containing the measured band structure.
+    :param γ: The bounds (in pixels) of the fine-tuning of the peak
+              detection around the coarse-detection value.  Usually a
+              value around ``10`` is a good idea.  If the fit gets too
+              jittery try increasing this value.  Too large a value
+              will make it possible for the fit to miss the bands
+              entirely however.
+    :param last_separation: The separation of the detected bands at an
+        adjacent ``k`` slice.  This parameter is used to enforce some
+        continuity on the detected band structure.
+    :param separation_continuity: The separation between the detected
+        peaks and ``last_separation`` is enforced to be within
+        ``separation_continuity * last_separation`` and to be greater
+        than ``separation_continuity * last_separation``.
+    :param min_height: The ``height`` parameter for the
+        ``scipy.signal.find_peaks``.
+
+    :returns: A tuple ``(e_1, e_2, σ_1, σ_2)`` with the peak positions
+              ``e_1 < e_2`` and their uncertainties ``σ_1, σ_2``.
+    """
+
     col = data[:, k].copy()
     col -= col.min()
     col /= col.max()
 
     e_axis = np.arange(col.size)
 
-    guesses, props = sc.signal.find_peaks(col, distance=2, height=min_height)
+    guesses, props = sc.signal.find_peaks(
+        col, distance=max(2, last_separation * separation_continuity), height=min_height
+    )
     means = guesses[:, None] + guesses[None, :]
 
     guess_i_1, guess_i_2 = np.unravel_index(
