@@ -157,7 +157,17 @@ def detect_bands_fixed_k(
 
 
 def detect_bands(data, *args, **kwargs):
-    """ """
+    """
+    Returns the bands detected in the measured band structure
+    ``data``.
+
+    The rest of the arguments are passed on to
+    :any:`detect_bands_fixed_k`.
+
+    :returns: An array of shape ``(#k, 4)``.  Each row contains
+              ``(e_1, e_2, σ_1, σ_2)`` with the peak positions ``e_1 <
+              e_2`` and their uncertainties ``σ_1, σ_2``.
+    """
     bands = []
 
     if "last_separation" in kwargs:
