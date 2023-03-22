@@ -151,12 +151,7 @@ def detect_bands_fixed_k(
     )
 
     σ_1, σ_2, *_ = np.sqrt(np.diag(cov))
-
     (e_1, σ_1), (e_2, σ_2) = np.sort(((e_1, σ_1), (e_2, σ_2)), axis=0)
-
-    # es = np.linspace(0, col.size, 1000)
-    # plt.plot(col)
-    # plt.plot(es, double_lorentzian(es, e_1, e_2, γ, _))
 
     return e_1, e_2, σ_1, σ_2
 
