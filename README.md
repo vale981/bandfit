@@ -8,7 +8,7 @@ It is taylored to the specific case where the parameters ``a`` and
 ``b`` are close to each other.
 
 For documentation, please refer to the docstrings (or the generated
-sphinx docs).
+sphinx docs) and check out ``example/example.ipynb``.
 
 Truth be told: this isn't my finest work. The functions are way to
 complex for what they do and should be split into smaller pieces. But
