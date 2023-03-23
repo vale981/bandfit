@@ -1,3 +1,19 @@
+"""
+This module provides the functionality to fit the band structure of
+the long range SSH model to an experimentally measured two dimensional
+image.
+
+It is taylored to the specific case where the parameters ``a`` and
+``b`` are close to each other.
+
+The data can be loaded with :any:`load_data`.  To detect the band
+structure :any:`detect_bands` can be used.  The result can be
+visualized with :any:`plot_data_with_bands`.
+
+To obtain the parameters of the band structure :any:`fit_to_bands` is
+used.  It's result can be visualized with
+:any:`plot_band_with_error_funnel`.
+"""
 import numpy as np
 import scipy as sc
 import matplotlib.pyplot as plt
@@ -182,13 +198,19 @@ def plot_data_with_bands(data, bands):
     """
     Plot the measured band structure ``data`` together with the output
     of :any:`detect_bands`.
+
+
+    :returns: Pyplot figure and axis objects.
     """
 
-    plt.matshow(data)
+    fig, ax = plt.subplots()
+    ax.matshow(data)
     ks = np.arange(data.shape[1])
 
-    plt.errorbar(ks, bands[:, 0], yerr=bands[:, 2], color="white")
-    plt.errorbar(ks, bands[:, 1], yerr=bands[:, 3], color="white")
+    ax.errorbar(ks, bands[:, 0], yerr=bands[:, 2], color="white")
+    ax.errorbar(ks, bands[:, 1], yerr=bands[:, 3], color="white")
+
+    return fig, ax
 
 
 def candidate(k, c, d, a, δb, k_scale, k_shift):
@@ -330,23 +352,25 @@ def fit_to_bands(
     return (final_params, σ)
 
 
-def plot_error_funnel(p, σ, ks=None):
+def plot_band_with_error_funnel(p, σ, ks=None):
     """
     Plot the band structure given the paramters ``p = (a, b, c, d)``
     and their uncertainties ``σ`` for monomentum vales ``ks``.
     """
+
+    fig, ax = plt.subplots()
     ks = ks or np.linspace(-np.pi, np.pi, 1000)
 
     params = np.random.multivariate_normal(p, np.diag(σ), 2000)
     energies = []
     for param in params:
         energies.append(energy(ks, *param))
-        # plt.plot(ks, energy(ks, *param), color="gray", alpha=0.1)
 
     energies = np.array(energies)
     σ_e = np.std(energies, axis=0)
     mean = energy(ks, *p)
-    plt.plot(ks, mean, linewidth=2)
-    plt.fill_between(ks, mean - σ_e, mean + σ_e, alpha=0.2)
 
-    return mean, mean - σ_e, mean + σ_e
+    ax.plot(ks, mean, linewidth=2)
+    ax.fill_between(ks, mean - σ_e, mean + σ_e, alpha=0.2)
+
+    return fig, ax
