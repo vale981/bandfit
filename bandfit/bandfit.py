@@ -337,6 +337,10 @@ def fit_to_bands(
 
 
 def plot_error_funnel(p, σ, ks=None):
+    """
+    Plot the band structure given the paramters ``p = (a, b, c, d)``
+    and their uncertainties ``σ`` for monomentum vales ``ks``.
+    """
     ks = ks or np.linspace(-np.pi, np.pi, 1000)
 
     params = np.random.multivariate_normal(p, np.diag(σ), 2000)
