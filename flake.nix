@@ -23,6 +23,7 @@
           pyright
           python310Packages.jupyter
           black
+          poetry
         ];
       };
     };

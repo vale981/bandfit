@@ -1,13 +1,7 @@
 import numpy as np
 import scipy as sc
 import matplotlib.pyplot as plt
-from numpy.typing import ArrayLike
-from scipy import signal
-from skimage.transform import resize
-from skimage.filters import hessian
-from skimage.morphology import skeletonize
 import itertools
-from scipy.interpolate import splrep, BSpline
 
 
 def load_data(data_file: str) -> np.ndarray:
